@@ -28,39 +28,23 @@ const app = express();
 const server = http.createServer(app);
 
 // Initialize Socket.io
-const io = new Server(server, {
-  cors: {
-    origin: [
-      'http://localhost:5173',
-      process.env.FRONTEND_URL
-    ].filter(Boolean),
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-  }
-});
-initSocket(io);
-
-// Core Middleware
+// Initialize Socket.io
 const allowedOrigins = [
   'http://localhost:5173',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+  'https://event-x-roan.vercel.app'
+];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+app.options('*', cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 // Health Check API
 app.get('/api/health', (req, res) => {
   res.status(200).json({
