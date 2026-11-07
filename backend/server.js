@@ -30,14 +30,31 @@ const server = http.createServer(app);
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: [
+      'http://localhost:5173',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  },
+    credentials: true
+  }
 });
 initSocket(io);
 
 // Core Middleware
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

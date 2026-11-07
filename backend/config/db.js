@@ -1,37 +1,28 @@
+
 const mongoose = require('mongoose');
 
-let mongodInstance = null;
-
 const connectDB = async () => {
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/eventx';
-  
+  const mongoUri = process.env.MONGODB_URI;
+
+  if (!mongoUri) {
+    throw new Error('MONGODB_URI is missing in environment variables');
+  }
+
   try {
     const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 3000,
+      serverSelectionTimeoutMS: 10000,
     });
-    console.log(`[Database] MongoDB Connected to host: ${conn.connection.host}`);
+
+    console.log(`[Database] MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (err) {
-    console.warn(`[Database] Direct MongoDB connection failed (${err.message}). Starting embedded MongoDB Memory Server...`);
-    try {
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      mongodInstance = await MongoMemoryServer.create();
-      const inMemoryUri = mongodInstance.getUri();
-      const conn = await mongoose.connect(inMemoryUri);
-      console.log(`[Database] Embedded MongoDB Memory Server started & connected: ${inMemoryUri}`);
-      return conn;
-    } catch (memErr) {
-      console.error('[Database] Fatal: Unable to initialize embedded MongoDB:', memErr.message);
-      throw memErr;
-    }
+    console.error('[Database] MongoDB connection failed:', err.message);
+    throw err;
   }
 };
 
 const disconnectDB = async () => {
   await mongoose.disconnect();
-  if (mongodInstance) {
-    await mongodInstance.stop();
-  }
 };
 
 module.exports = { connectDB, disconnectDB };
